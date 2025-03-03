@@ -58,13 +58,13 @@ function addProduct() {
         return;
     }
 
-    const name = document.getElementById("product-name").value.trim();
-    const price = parseFloat(document.getElementById("product-price").value);
-    const description = document.getElementById("product-description").value.trim();
-    const stock = parseInt(document.getElementById("product-stock").value, 10);
-    const category = document.getElementById("product-category").value.trim();
-    const img = document.getElementById("product-img").value.trim();
-
+    const name = document.getElementById("productName").value.trim();
+    const price = parseFloat(document.getElementById("productPrice").value);
+    const description = document.getElementById("productDescription").value.trim();
+    const stock = parseInt(document.getElementById("productStock").value, 10);
+    const category = document.getElementById("productCategory").value.trim();
+    const img = document.getElementById("productImg").value.trim();
+    console.log("line 67:: ", name, price, description, stock, category);
     if (!name || !category || isNaN(price) || isNaN(stock)) {
         alert("Please fill all fields correctly.");
         return;
@@ -92,6 +92,7 @@ function addProduct() {
 // 🟢 Load Products
 function loadProducts() {
     const token = localStorage.getItem("adminToken");
+    console.log("line 96:: ", token);
     if (!token) {
         alert("Admin not logged in.");
         return;
