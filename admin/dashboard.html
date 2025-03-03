@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="navbar">
+        <h2>Admin Dashboard</h2>
+        <button onclick="logout()">Logout</button>
+    </div>
+
+    <div class="container">
+        <h3>Product Management</h3>
+        <button onclick="loadProducts()">Refresh Products</button>
+        <table id="productTable">
+            <thead>
+                <tr>
+                    <th>ID</th><th>Name</th><th>Price</th><th>Actions</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+
+        <h3>Add New Product</h3>
+        <input type="text" id="productName" placeholder="Product Name">
+        <input type="number" id="productPrice" placeholder="Price">
+        <button onclick="addProduct()">Add Product</button>
+
+        <h3>Orders</h3>
+        <table id="orderTable">
+            <thead>
+                <tr>
+                    <th>Order ID</th><th>User ID</th><th>Total Price</th><th>Status</th><th>Action</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
