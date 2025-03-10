@@ -28,27 +28,6 @@ function logout() {
     window.location.href = "index.html";
 }
 
-// 🟢 Fetch and Display Products
-function loadProducts() {
-    console.log("line 33:: ", localStorage.getItem("adminToken"));
-    fetch(`${API_URL}/api/admin/products`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("adminToken")}` }
-    })
-    .then(response => response.json())
-    .then(products => {
-        const productTable = document.querySelector("#productTable tbody");
-        productTable.innerHTML = "";
-        products.forEach(p => {
-            productTable.innerHTML += `
-                <tr>
-                    <td>${p.id}</td><td>${p.name}</td><td>$${p.price}</td>
-                    <td><button onclick="deleteProduct(${p.id})">Delete</button></td>
-                </tr>
-            `;
-        });
-    })
-    .catch(err => console.error("Failed to load products", err));
-}
 
 // 🟢 Add Product
 function addProduct() {
@@ -63,65 +42,105 @@ function addProduct() {
     const description = document.getElementById("productDescription").value.trim();
     const stock = parseInt(document.getElementById("productStock").value, 10);
     const category = document.getElementById("productCategory").value.trim();
-    const img = document.getElementById("productImg").value.trim();
-    console.log("line 67:: ", name, price, description, stock, category);
-    if (!name || !category || isNaN(price) || isNaN(stock)) {
-        alert("Please fill all fields correctly.");
+    const imageFile = document.getElementById("productImg").files[0];
+
+    console.log("🔹 Step 1: Captured Inputs::", { name, price, description, stock, category, imageFile });
+
+    if (!name || !description || !price || !stock || !imageFile) {
+        alert("Please fill all fields correctly & select an image file.");
         return;
+    }
+
+    // ✅ Check for undefined values before appending
+    const formData = new FormData();
+    formData.append("name", name);
+    formData.append("category", category);
+    formData.append("description", description);
+    formData.append("price", price);
+    formData.append("stock", stock);
+    formData.append("img", imageFile);  
+
+    // ✅ Log each formData entry
+    console.log("🔹 Step 2: FormData Contents::");
+    for (const pair of formData.entries()) {
+        console.log(pair[0], pair[1]);
     }
 
     fetch(`${API_URL}/api/admin/add_product`, { 
         method: "POST",
         headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`
+            "Authorization": `Bearer ${token}`  // ✅ No "Content-Type" for FormData
         },
-        body: JSON.stringify({ name, category, description, price, stock, img })
+        body: formData,
     })
-    .then(response => response.json())
+    .then(response => {
+        console.log("🔹 Step 3: Response status:", response.status);
+        return response.json();
+    })
     .then(data => {
+        console.log("🔹 Step 4: Response data:", data);
         alert(data.message);
         loadProducts();
     })
     .catch(error => {
-        console.error("Error adding product:", error);
+        console.error("❌ Error adding product:", error);
         alert("Failed to add product.");
     });
 }
 
+
+
 // 🟢 Load Products
 function loadProducts() {
     const token = localStorage.getItem("adminToken");
-    console.log("line 96:: ", token);
     if (!token) {
         alert("Admin not logged in.");
         return;
     }
 
     fetch(`${API_URL}/api/admin/products`, {
-        method: "GET",
-        headers: {
-            "Authorization": `Bearer ${token}`,
+        headers: { 
+            "Authorization": `Bearer ${token}`, // ✅ Add Authorization header
             "Content-Type": "application/json"
         }
     })
-    .then(response => response.json())
-    .then(products => {
-        console.log("Products loaded:", products);
-        const productTable = document.querySelector("#productTable tbody");
-        productTable.innerHTML = "";
-        products && products?.forEach(p => {
-            productTable.innerHTML += `
-                <tr>
-                    <td>${p.id}</td><td>${p.name}</td><td>$${p.price}</td>
-                    <td><button onclick="deleteProduct(${p.id})">Delete</button></td>
-                </tr>
-            `;
-        });
-        alert("Products loaded successfully! Check console.");
+    .then(response => {
+        if (response.status === 401) {
+            throw new Error("Unauthorized! Please log in again.");
+        }
+        return response.json();
     })
-    .catch(error => console.error("Error loading products:", error));
+    .then(data => {
+        console.log("🔹 Products loaded:", data);
+
+        if (!Array.isArray(data)) {
+            console.error("❌ Error: Expected an array but got:", data);
+            return;
+        }
+
+        const productContainer = document.querySelector("#productTable tbody");
+        productContainer.innerHTML = ""; // Clear previous products
+
+        data.forEach(product => {
+            const productElement = document.createElement("div");
+            const imageUrl = `${API_URL}/uploads/${product.img}`;
+            productElement.innerHTML = `
+                <h3>${product.name}</h3>
+                <p>${product.description}</p>
+                <p>Price: $${product.price}</p>
+                <p>Stock: ${product.stock}</p>
+                <img src="${imageUrl}" width="100">
+            `;
+            productContainer.appendChild(productElement);
+        });
+    })
+    .catch(error => {
+        console.error("❌ Error loading products:", error);
+        alert(error.message);
+    });
 }
+
+
 
 // 🟢 Delete Product
 function deleteProduct(id) {
@@ -164,5 +183,5 @@ function updateOrderStatus(id) {
 // 🟢 Load Data on Dashboard
 if (window.location.pathname.includes("dashboard.html")) {
     loadProducts();
-    loadOrders();
+    //loadOrders();
 }

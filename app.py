@@ -5,6 +5,7 @@ from flask_cors import CORS
 from flask_migrate import Migrate
 from config import Config
 import logging
+import os
 
 # Configure logging for debugging
 logging.basicConfig(level=logging.DEBUG)
@@ -12,6 +13,14 @@ logging.basicConfig(level=logging.DEBUG)
 # Initialize Flask App
 app = Flask(__name__)
 app.config.from_object(Config)
+
+# Define Upload Folder
+UPLOAD_FOLDER = os.path.join(os.getcwd(), "uploads")
+app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+
+# Ensure uploads folder exists
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
 
 # Enable CORS
 CORS(app)

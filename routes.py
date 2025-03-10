@@ -1,8 +1,11 @@
-from flask import request, jsonify, Blueprint
+from flask import request, jsonify, Blueprint,current_app   
 from app import db  # ✅ Corrected import to avoid circular import
 from models import User, Product, Order, Admin
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
+from flask import send_from_directory
+import os 
+from werkzeug.utils import secure_filename
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/api/admin")  # ✅ Correct URL prefix
 user_bp = Blueprint("user", __name__)
@@ -27,8 +30,8 @@ def admin_login():
     if not admin or not check_password_hash(admin.password, password):
         return jsonify({"error": "Invalid credentials"}), 401
 
-    access_token = create_access_token(identity=admin.id)
-    return jsonify({"message": "Login successful", "access_token": access_token}), 200
+    access_token = create_access_token(identity=str(admin.id))
+    return jsonify({"message": "Login successful", "access_token": access_token ,"data": {"id": admin.id, "username": admin.username}}), 200
 
 # 🟢 Get All Products
 @admin_bp.route("/products", methods=["GET"])
@@ -41,32 +44,37 @@ def get_products():
     } for p in products]), 200
 
 # 🟢 Add Product
-@admin_bp.route("/add_product", methods=["POST"])  # ✅ Fixed URL
+@admin_bp.route("/add_product", methods=["POST"])
 @jwt_required()
 def add_product():
-    data = request.json
-    print("Received Data:", data)
+    print("🔹 Step 1: Captured Inputs:", request.form)
 
-    if not data or "name" not in data or "price" not in data or "stock" not in data:
-        return jsonify({"error": "Missing required fields"}), 400
+    if "img" not in request.files:
+        return jsonify({"error": "Image file is required"}), 400
 
-    category = data.get("category", "Uncategorized")  # Default category
+    file = request.files["img"]
+    filename = secure_filename(file.filename)
 
-    try:
-        product = Product(
-            name=data["name"],
-            category=category,
-            price=float(data["price"]),
-            stock=int(data["stock"])
-        )
-        db.session.add(product)
-        db.session.commit()
-        print("✅ Product added successfully!")
-        return jsonify({"message": "Product added successfully"}), 201
-    except Exception as e:
-        db.session.rollback()
-        print("❌ Error adding product:", e)
-        return jsonify({"error": str(e)}), 500
+    upload_folder = current_app.config.get("UPLOAD_FOLDER", "uploads")
+    filepath = os.path.join(upload_folder, filename)
+    file.save(filepath)
+
+    # ✅ Store only the filename in the database, NOT the full path
+    data = request.form
+    product = Product(
+        name=data.get("name", ""),
+        category=data.get("category", ""),
+        price=float(data.get("price", 0)),
+        stock=int(data.get("stock", 0)),
+        img=filename,  # ✅ Store only the filename
+        description=data.get("description", "")
+    )
+
+    db.session.add(product)
+    db.session.commit()
+    return jsonify({"message": "Product added successfully"}), 201
+
+
 
 # 🟢 Delete Product
 @admin_bp.route("/delete_product", methods=["DELETE"])
@@ -83,3 +91,10 @@ def delete_product():
     db.session.delete(product)
     db.session.commit()
     return jsonify({"message": "Product deleted successfully"}), 200
+# 🟢 Route to Serve Images
+@admin_bp.route('/uploads/<filename>')
+def uploaded_file(filename):
+    upload_folder = os.path.join(current_app.root_path, "uploads")
+    return send_from_directory(upload_folder, filename)
+
+
