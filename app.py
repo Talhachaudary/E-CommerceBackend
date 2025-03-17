@@ -7,39 +7,33 @@ from config import Config
 import logging
 import os
 
-# Configure logging for debugging
-logging.basicConfig(level=logging.DEBUG)
+# Create extensions but don't initialize them yet
+db = SQLAlchemy()
+jwt = JWTManager()
 
-# Initialize Flask App
-app = Flask(__name__)
-app.config.from_object(Config)
-
-# Define Upload Folder
-UPLOAD_FOLDER = os.path.join(os.getcwd(), "uploads")
-app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
-
-# Ensure uploads folder exists
-if not os.path.exists(UPLOAD_FOLDER):
-    os.makedirs(UPLOAD_FOLDER)
-
-# Enable CORS
-CORS(app)
-
-# Initialize Extensions
-db = SQLAlchemy(app)
-migrate = Migrate(app, db)
-jwt = JWTManager(app)
-
-# Import and Register Blueprints
-try:
-    from routes import admin_bp, user_bp
-    app.register_blueprint(admin_bp, url_prefix="/api/admin")  # ✅ Fixed URL prefix
-    app.register_blueprint(user_bp, url_prefix="/api/user")
-except ImportError as e:
-    logging.error(f"Error importing blueprints: {e}")
-
-# Run the application
-if __name__ == "__main__":
-    with app.app_context():
-        db.create_all()
-    app.run(debug=True)
+def create_app():
+    app = Flask(__name__)
+    
+    # Configure app
+    app.config.from_object('config.Config')
+    app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(__file__), 'uploads')
+    
+    # Initialize extensions with app
+    CORS(app, resources={
+    r"/api/*": {
+        "origins": ["http://127.0.0.1:5500", "http://localhost:5500", 
+                    "http://127.0.0.1:5501", "http://localhost:5501"],
+        "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Authorization"]
+    }
+}, supports_credentials=True)
+    db.init_app(app)
+    jwt.init_app(app)
+    
+    # Register blueprints
+    from routes import admin_bp, user_bp, public_bp
+    app.register_blueprint(admin_bp)
+    app.register_blueprint(user_bp)
+    app.register_blueprint(public_bp)
+    
+    return app

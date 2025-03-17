@@ -5,43 +5,317 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard</title>
     <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <div class="navbar">
         <h2>Admin Dashboard</h2>
-        <button onclick="logout()">Logout</button>
+        <div class="nav-right">
+            <span id="adminUsername">Admin</span>
+            <button onclick="logout()" class="logout-btn">Logout</button>
+        </div>
     </div>
 
-    <div class="container">
-        <h3>Product Management</h3>
-        <button onclick="loadProducts()">Refresh Products</button>
-        <table id="productTable">
-            <thead>
-                <tr>
-                    <th>ID</th><th>Name</th><th>Price</th><th>Actions</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
+    <div class="sidebar">
+        <ul>
+            <li><a href="#dashboard-section" class="active">Dashboard</a></li>
+            <li><a href="#products-section">Products</a></li>
+            <li><a href="#orders-section">Orders</a></li>
+            <li><a href="#analytics-section">Sales Analytics</a></li>
+        </ul>
+    </div>
 
-        <h3>Add New Product</h3>
-        <input type="text" id="productName" placeholder="Product Name">
-        <input type="number" id="productPrice" placeholder="Price">
-        <input type="text" id="productDescription" placeholder="Description">
-        <input type="number" id="productStock" placeholder="Stock">
-        <input type="text" id="productCategory" placeholder="Category">
-        <input type="file" id="productImg" accept="image/*" placeholder="Image">
-        <button onclick="addProduct()">Add Product</button>
+    <div class="main-content">
+        <!-- Dashboard Overview Section -->
+        <section id="dashboard-section" class="section">
+            <h2>Dashboard Overview</h2>
+            <div class="stat-cards">
+                <div class="stat-card">
+                    <h3>Total Products</h3>
+                    <p id="totalProducts">0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Total Orders</h3>
+                    <p id="totalOrders">0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Total Revenue</h3>
+                    <p id="totalRevenue">$0</p>
+                </div>
+                <div class="stat-card">
+                    <h3>Low Stock Items</h3>
+                    <p id="lowStockItems">0</p>
+                </div>
+            </div>
+            
+            <div class="recent-activity">
+                <h3>Recent Activity</h3>
+                <div id="recentActivityList" class="activity-list">
+                    <!-- Recent activities will be populated here -->
+                </div>
+            </div>
+        </section>
 
-        <h3>Orders</h3>
-        <table id="orderTable">
-            <thead>
-                <tr>
-                    <th>Order ID</th><th>User ID</th><th>Total Price</th><th>Status</th><th>Action</th>
-                </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
+        <!-- Products Section -->
+        <section id="products-section" class="section">
+            <h2>Product Management</h2>
+            
+            <div class="section-header">
+                <div class="search-box">
+                    <input type="text" id="productSearch" placeholder="Search products...">
+                    <select id="categoryFilter">
+                        <option value="">All Categories</option>
+                        <!-- Categories will be populated here -->
+                    </select>
+                </div>
+                <button onclick="loadProducts()" class="refresh-btn">Refresh</button>
+            </div>
+            
+            <table id="productTable" class="data-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Product Details</th>
+                        <th>Price</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+            
+            <div class="pagination">
+                <button id="prevPage" class="page-btn">Previous</button>
+                <span id="currentPage">Page 1</span>
+                <button id="nextPage" class="page-btn">Next</button>
+            </div>
+            
+            <h3>Add New Product</h3>
+            <form id="addProductForm" class="product-form">
+                <div class="form-group">
+                    <input type="text" id="productName" placeholder="Product Name" required>
+                </div>
+                <div class="form-group">
+                    <input type="number" id="productPrice" placeholder="Price" step="0.01" min="0" required>
+                </div>
+                <div class="form-group">
+                    <textarea id="productDescription" placeholder="Description" required></textarea>
+                </div>
+                <div class="form-group">
+                    <input type="number" id="productStock" placeholder="Stock" min="0" required>
+                </div>
+                <div class="form-group">
+                    <input type="text" id="productCategory" placeholder="Category" list="categories" required>
+                    <datalist id="categories">
+                        <!-- Categories will be added here -->
+                    </datalist>
+                </div>
+                <div class="form-group">
+                    <label for="productImg">Product Image</label>
+                    <input type="file" id="productImg" accept="image/*" required>
+                    <div id="imagePreview" class="image-preview"></div>
+                </div>
+                <button type="button" onclick="addProduct()" class="submit-btn">Add Product</button>
+            </form>
+        </section>
+
+        <!-- Orders Section -->
+        <section id="orders-section" class="section">
+            <h2>Orders</h2>
+            
+            <div class="section-header">
+                <div class="search-box">
+                    <input type="text" id="orderSearch" placeholder="Search orders...">
+                    <select id="statusFilter">
+                        <option value="">All Statuses</option>
+                        <option value="Pending">Pending</option>
+                        <option value="Processing">Processing</option>
+                        <option value="Shipped">Shipped</option>
+                        <option value="Delivered">Delivered</option>
+                        <option value="Cancelled">Cancelled</option>
+                    </select>
+                </div>
+                <button onclick="loadOrders()" class="refresh-btn">Refresh</button>
+            </div>
+            
+            <table id="orderTable" class="data-table">
+                <thead>
+                    <tr>
+                        <th>Order ID</th>
+                        <th>User</th>
+                        <th>Date</th>
+                        <th>Total</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </section>
+
+        <!-- Sales Analytics Section -->
+        <section id="analytics-section" class="section">
+            <h2>Sales Analytics</h2>
+            
+            <div class="tab-container">
+                <div class="tabs">
+                    <button class="tab-btn active" onclick="showSalesTab('daily', event)">Daily</button>
+                    <button class="tab-btn" onclick="showSalesTab('monthly', event)">Monthly</button>
+                    <button class="tab-btn" onclick="showSalesTab('yearly', event)">Yearly</button>
+                </div>
+                
+                <div id="dailySales" class="tab-content active">
+                    <h3>Daily Sales</h3>
+                    <div class="date-picker">
+                        <label for="dailyDate">Select Date:</label>
+                        <input type="date" id="dailyDate">
+                        <button onclick="loadDailySales()">View</button>
+                    </div>
+                    <div class="analytics-container">
+                        <div class="chart-container">
+                            <canvas id="dailySalesChart"></canvas>
+                        </div>
+                        <div class="stats-container">
+                            <div class="stat-item">
+                                <h4>Total Orders</h4>
+                                <p id="dailyTotalOrders">0</p>
+                            </div>
+                            <div class="stat-item">
+                                <h4>Total Revenue</h4>
+                                <p id="dailyTotalRevenue">$0</p>
+                            </div>
+                            <div class="stat-item">
+                                <h4>Top Selling Product</h4>
+                                <p id="dailyTopProduct">None</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="monthlySales" class="tab-content">
+                    <h3>Monthly Sales</h3>
+                    <div class="date-picker">
+                        <label for="monthlyDate">Select Month:</label>
+                        <input type="month" id="monthlyDate">
+                        <button onclick="loadMonthlySales()">View</button>
+                    </div>
+                    <div class="analytics-container">
+                        <div class="chart-container">
+                            <canvas id="monthlySalesChart"></canvas>
+                        </div>
+                        <div class="stats-container">
+                            <div class="stat-item">
+                                <h4>Total Orders</h4>
+                                <p id="monthlyTotalOrders">0</p>
+                            </div>
+                            <div class="stat-item">
+                                <h4>Total Revenue</h4>
+                                <p id="monthlyTotalRevenue">$0</p>
+                            </div>
+                            <div class="stat-item">
+                                <h4>Top Selling Product</h4>
+                                <p id="monthlyTopProduct">None</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="yearlySales" class="tab-content">
+                    <h3>Yearly Sales</h3>
+                    <div class="date-picker">
+                        <label for="yearlyDate">Select Year:</label>
+                        <select id="yearlyDate">
+                            <!-- Years will be populated dynamically -->
+                        </select>
+                        <button onclick="loadYearlySales()">View</button>
+                    </div>
+                    <div class="analytics-container">
+                        <div class="chart-container">
+                            <canvas id="yearlySalesChart"></canvas>
+                        </div>
+                        <div class="stats-container">
+                            <div class="stat-item">
+                                <h4>Total Orders</h4>
+                                <p id="yearlyTotalOrders">0</p>
+                            </div>
+                            <div class="stat-item">
+                                <h4>Total Revenue</h4>
+                                <p id="yearlyTotalRevenue">$0</p>
+                            </div>
+                            <div class="stat-item">
+                                <h4>Top Selling Product</h4>
+                                <p id="yearlyTopProduct">None</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Edit Product Modal -->
+    <div id="editProductModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h3>Edit Product</h3>
+            <form id="editProductForm" class="product-form">
+                <input type="hidden" id="editProductId">
+                <div class="form-group">
+                    <input type="text" id="editProductName" placeholder="Product Name" required>
+                </div>
+                <div class="form-group">
+                    <input type="number" id="editProductPrice" placeholder="Price" step="0.01" min="0" required>
+                </div>
+                <div class="form-group">
+                    <textarea id="editProductDescription" placeholder="Description" required></textarea>
+                </div>
+                <div class="form-group">
+                    <input type="number" id="editProductStock" placeholder="Stock" min="0" required>
+                </div>
+                <div class="form-group">
+                    <input type="text" id="editProductCategory" placeholder="Category" list="edit-categories" required>
+                    <datalist id="edit-categories">
+                        <!-- Categories will be added here -->
+                    </datalist>
+                
+                <div class="edit-form-group">
+                    <label>Current Image:</label>
+                    <div class="current-image-container">
+                        <img id="currentProductImage" src="" alt="Current product image">
+                        <span id="currentImageName"></span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="editProductImg">New Image (optional)</label>
+                    <input type="file" id="editProductImg" accept="image/*">
+                    <p><small>Leave empty to keep current image</small></p>
+                </div>
+                <button type="button" onclick="updateProduct()" class="submit-btn">Update Product</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Order Details Modal -->
+    <div id="orderDetailsModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h3>Order Details</h3>
+            <div id="orderDetailsContent"></div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toast" class="toast"></div>
+
+    <!-- Confirmation Dialog -->
+    <div id="confirmationDialog" class="modal">
+        <div class="modal-content confirmation-content">
+            <h3 id="confirmationTitle">Confirm Action</h3>
+            <p id="confirmationMessage">Are you sure you want to proceed?</p>
+            <div class="confirmation-buttons">
+                <button id="confirmButton" class="confirm-btn">Yes</button>
+                <button id="cancelButton" class="cancel-btn">Cancel</button>
+            </div>
+        </div>
     </div>
 
     <script src="script.js"></script>

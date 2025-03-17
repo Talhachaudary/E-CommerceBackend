@@ -24,12 +24,27 @@ class Cart(db.Model):
     product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
     quantity = db.Column(db.Integer, nullable=False)
 
+
 class Order(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    total_price = db.Column(db.Float, nullable=False)
+    total = db.Column(db.Float, nullable=False)  # Renamed from total_price
     status = db.Column(db.String(20), default="Pending")
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Add relationship to User
+    user = db.relationship('User', backref='orders')
+
+class OrderItem(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    order_id = db.Column(db.Integer, db.ForeignKey('order.id'), nullable=False)
+    product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
+    quantity = db.Column(db.Integer, nullable=False)
+    price = db.Column(db.Float, nullable=False)  # Price at time of purchase
+    
+    # Relationships for easy access
+    product = db.relationship('Product', backref='order_items')
+    order = db.relationship('Order', backref='items')
 
 class Admin(db.Model):
     id = db.Column(db.Integer, primary_key=True)
